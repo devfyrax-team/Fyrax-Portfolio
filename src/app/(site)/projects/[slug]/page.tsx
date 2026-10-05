@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Check } from "@phosphor-icons/react/ssr";
+import { ArrowLeft, ArrowRight, ArrowSquareOut, Check } from "@phosphor-icons/react/ssr";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -65,6 +65,17 @@ export default async function ProjectPage({
               {project.summary}
             </p>
           </Reveal>
+          {project.demoUrl && (
+            <a
+              href={project.demoUrl}
+              target="_blank"
+              rel="noopener"
+              className="clip-corner-sm group mt-10 inline-flex items-center gap-3 whitespace-nowrap bg-brand-strong px-6 py-3.5 text-sm font-semibold text-white transition-[background-color,transform] duration-300 ease-snap hover:bg-brand-deep active:scale-[0.98]"
+            >
+              Launch live demo
+              <ArrowSquareOut aria-hidden weight="bold" className="size-4" />
+            </a>
+          )}
           <dl className="mt-12 grid max-w-2xl gap-6 border-t border-line pt-8 sm:grid-cols-3">
             {facts.map((fact) => (
               <div key={fact.label}>
@@ -79,10 +90,24 @@ export default async function ProjectPage({
       <section className="py-20 sm:py-28">
         <Container>
           <Reveal>
-            <ProjectCover
-              index={index}
-              className="clip-corner aspect-[16/8] w-full"
-            />
+            {project.demoUrl ? (
+              <div className="clip-corner overflow-hidden border border-line bg-surface">
+                <iframe
+                  src={project.demoUrl}
+                  title={`${project.title} live demo`}
+                  loading="lazy"
+                  className="block h-[70vh] min-h-[480px] w-full bg-white"
+                />
+                <p className="px-5 py-3 text-sm text-muted">
+                  Interactive demo with sample data. Changes are not saved.
+                </p>
+              </div>
+            ) : (
+              <ProjectCover
+                index={index}
+                className="clip-corner aspect-[16/8] w-full"
+              />
+            )}
           </Reveal>
 
           <div className="mt-20 grid gap-16 lg:grid-cols-[1.6fr_1fr] lg:gap-24">

@@ -10,10 +10,36 @@ export type Project = {
   solution: string;
   outcomes: string[];
   featured?: boolean;
+  /** Path of an interactive demo served from /public, shown on the project page. */
+  demoUrl?: string;
+  /** Screenshot in /public used as the card cover instead of the generated artwork. */
+  image?: string;
 };
 
 // Placeholder case studies. Replace with real client work.
 export const projects: Project[] = [
+  {
+    slug: "hrms",
+    title: "HRMS platform",
+    client: "Multi-company HR product",
+    year: "2026",
+    category: "Web application",
+    summary:
+      "A multi-company HR system covering employees, leave, attendance, payroll, recruitment and performance in one place.",
+    tags: ["React", "TypeScript", "Express", "PostgreSQL", "Prisma", "Docker"],
+    challenge:
+      "HR teams were juggling spreadsheets for leave, attendance and payroll, and approvals travelled by email, so nothing had a single source of truth.",
+    solution:
+      "We built one system with role-based access for HR, managers and employees: configurable approval flows, payroll runs with payslips, a recruitment pipeline, performance cycles and per-seat billing for each company.",
+    outcomes: [
+      "Leave, attendance and payroll in a single system",
+      "Approvals routed automatically to the right person",
+      "Each company's data kept separate, billed per seat",
+    ],
+    featured: true,
+    demoUrl: "/demos/hrms/",
+    image: "/projects/hrms-cover.png",
+  },
   {
     slug: "fleet-tracking-dashboard",
     title: "Fleet tracking dashboard",
