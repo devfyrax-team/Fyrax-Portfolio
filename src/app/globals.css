@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+/*
+ * Design system
+ * - One theme: dark. The Fyrax logo is built for a navy background, so there is no light mode.
+ * - One accent: the logo red. Used for actions and small highlights only.
+ * - One shape rule: chamfered corners, echoing the angular logo mark.
+ *     containers  -> clip-corner    (18px cut)
+ *     buttons     -> clip-corner-sm (10px cut)
+ *     form inputs -> square
+ */
+@theme inline {
+  --color-ink: #0e151c;
+  --color-surface: #151e29;
+  --color-surface-2: #1b2633;
+  --color-line: #263341;
+  --color-line-strong: #5b6b80;
+  --color-paper: #eeece5;
+  --color-muted: #98a4b2;
+  --color-brand: #f22125;
+  --color-brand-strong: #dc1a1f;
+  --color-brand-deep: #c4161b;
+  --color-brand-soft: #ff6164;
+  --color-brand-tint: #2a1519;
+
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --ease-snap: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-ink);
+  color: var(--color-paper);
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+p,
+li {
+  text-wrap: pretty;
+}
+
+::selection {
+  background: var(--color-brand);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand-soft);
+  outline-offset: 3px;
+}
+
+/* clip-path would cut the outline off, so draw it inside the shape */
+a.clip-corner:focus-visible,
+a.clip-corner-sm:focus-visible,
+button.clip-corner-sm:focus-visible {
+  outline-offset: -4px;
+}
+
+@utility clip-corner {
+  clip-path: polygon(
+    0 0,
+    calc(100% - 18px) 0,
+    100% 18px,
+    100% 100%,
+    18px 100%,
+    0 calc(100% - 18px)
+  );
+}
+
+@utility clip-corner-sm {
+  clip-path: polygon(
+    0 0,
+    calc(100% - 10px) 0,
+    100% 10px,
+    100% 100%,
+    10px 100%,
+    0 calc(100% - 10px)
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
