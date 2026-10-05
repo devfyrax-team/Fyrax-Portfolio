@@ -41,6 +41,28 @@ export const projects: Project[] = [
     image: "/projects/hrms-cover.png",
   },
   {
+    slug: "hardware-pos",
+    title: "Hardware store POS",
+    client: "Hardware retailers",
+    year: "2026",
+    category: "Desktop application",
+    summary:
+      "An offline point-of-sale for hardware stores: fast barcode checkout, stock tracking, returns and daily reports with no internet needed.",
+    tags: ["Electron", "React", "TypeScript", "SQLite"],
+    challenge:
+      "Hardware shops sell by the kilo, the metre and the box, and run on unreliable internet. Paper bills and spreadsheets made stock counts and daily profit guesswork.",
+    solution:
+      "We built a desktop POS that works fully offline on a local database. It handles fractional units, an append-only stock ledger, partial returns, supplier purchasing, staff PIN roles, automatic backups and 80 mm receipt printing.",
+    outcomes: [
+      "Checkout by barcode or search, even with no internet",
+      "Stock always matches sales, returns and deliveries",
+      "Daily revenue, VAT and profit in one report",
+    ],
+    featured: true,
+    demoUrl: "/demos/pos/",
+    image: "/projects/pos-cover.png",
+  },
+  {
     slug: "fleet-tracking-dashboard",
     title: "Fleet tracking dashboard",
     client: "Logistics company",
