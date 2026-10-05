@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react'
 import type { Sale, SaleReturn, SaleSummary, Settings } from '../types'
 import { lkr, qtyFmt, receiptHtml, refundHtml, todayStr } from '../util'
+
+const dayStr = (back: number) => {
+  const d = new Date()
+  d.setDate(d.getDate() - back)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
 import { IconPrinter, IconSearch } from '../icons'
 
 export default function Bills({ settings }: { settings: Settings }) {
@@ -28,14 +34,20 @@ export default function Bills({ settings }: { settings: Settings }) {
             <IconSearch />
             <input aria-label="Search bill number" placeholder="Bill number (any date)" value={text} onChange={(e) => setText(e.target.value)} />
           </div>
+          {[['Today', 0], ['Yesterday', 1]].map(([label, back]) => (
+            <button key={label} className={date === dayStr(back as number) && !text.trim() ? 'fchip on' : 'fchip'} onClick={() => { setText(''); setDate(dayStr(back as number)) }}>
+              {label}
+            </button>
+          ))}
           <label className="form-actions">
-            <span className="label">Date</span>
+            <span className="label">Or pick a date</span>
             <input className="date-input" type="date" value={date} disabled={!!text.trim()} onChange={(e) => setDate(e.target.value)} />
           </label>
         </div>
       </div>
 
       <div className="page-body">
+        <div className="muted" role="status">{rows.length} {rows.length === 1 ? 'bill' : 'bills'} · {lkr(rows.reduce((a, r) => a + r.total, 0))} in total</div>
         <div className="card table-card">
           <div className="table-scroll">
             <table className="tbl">
@@ -51,10 +63,10 @@ export default function Bills({ settings }: { settings: Settings }) {
                     <td style={{ textTransform: 'capitalize' }}>{s.method}</td>
                     <td className="r">{lkr(s.total)}</td>
                     <td>{s.refunded > 0 ? <span className="pill warn">{s.refunded >= s.total ? 'Fully refunded' : `Refunded ${lkr(s.refunded)}`}</span> : <span className="muted">—</span>}</td>
-                    <td className="r"><button className="btn sm outline" onClick={() => view(s.id)}>Open</button></td>
+                    <td className="r"><button className="btn sm outline" onClick={() => view(s.id)}>View bill</button></td>
                   </tr>
                 ))}
-                {!rows.length && <tr><td colSpan={7}><div className="empty"><b>No bills found</b><span>Try another date or bill number.</span></div></td></tr>}
+                {!rows.length && <tr><td colSpan={7}><div className="empty"><b>No bills on this day</b><span>Choose another date, or type a bill number to search every day.</span></div></td></tr>}
               </tbody>
             </table>
           </div>
@@ -153,9 +165,9 @@ function BillDialog({ sale, settings, onClose, onChanged }: { sale: Sale; settin
         {returning && (
           <div className="form" style={{ marginTop: 16 }}>
             <div className="field">Refund paid by
-              <div className="chips">
+              <div className="pay-methods">
                 {['cash', 'card'].map((m) => (
-                  <button key={m} className={m === method ? 'chip active' : 'chip'} onClick={() => setMethod(m)}>{m}</button>
+                  <button key={m} className={m === method ? 'pay on' : 'pay'} onClick={() => setMethod(m)}>{m === 'cash' ? 'Cash' : 'Card'}</button>
                 ))}
               </div>
             </div>
@@ -171,7 +183,7 @@ function BillDialog({ sale, settings, onClose, onChanged }: { sale: Sale; settin
           {!returning && (
             <>
               <button className="btn outline" onClick={() => window.api.printReceipt(receiptHtml(sale, settings, Math.max(0, sale.paid - sale.total)))}><IconPrinter /> Reprint</button>
-              <button className="btn primary" disabled={!anyLeft} onClick={() => { setReturning(true); setDone(null) }}>{anyLeft ? 'Return items' : 'Fully returned'}</button>
+              <button className="btn primary" disabled={!anyLeft} onClick={() => { setReturning(true); setDone(null) }}>{anyLeft ? 'Take a return' : 'Fully returned'}</button>
             </>
           )}
           {returning && (

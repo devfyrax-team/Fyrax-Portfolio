@@ -59,26 +59,26 @@ function Shell() {
   if (!user) return <Navigate to={admin ? '/platform' : '/login'} replace />; // a super admin has their own console
 
   const links = [
-    { to: '/', label: 'Today', icon: 'home' as const, show: true },
-    { to: '/attendance', label: 'Attendance', icon: 'clock' as const, show: true },
-    { to: '/leave', label: 'Leave', icon: 'calendar' as const, show: true },
-    { to: '/requests', label: 'Requests', icon: 'inbox' as const, show: true, badge: waiting.data?.total },
-    { to: '/notifications', label: 'Notifications', icon: 'bell' as const, show: true, badge: unread.data?.unread },
-    { to: '/expenses', label: 'Expenses', icon: 'card' as const, show: true },
-    { to: '/payroll', label: 'Payroll', icon: 'wallet' as const, show: true },
-    { to: '/performance', label: 'Performance', icon: 'star' as const, show: true, badge: perf.data?.total },
-    { to: '/profile', label: 'My profile', icon: 'user' as const, show: true },
-    { to: '/recruitment', label: 'Recruitment', icon: 'users' as const, show: canView(user.role) },
-    { to: '/employees', label: isHR(user.role) ? 'Employees' : 'My team', icon: 'users' as const, show: canView(user.role) },
-    { to: '/assets', label: 'Assets', icon: 'list' as const, show: isHR(user.role) },
-    { to: '/settings', label: 'Settings', icon: 'settings' as const, show: isHR(user.role) },
+    { to: '/', label: 'Today', icon: 'home' as const, show: true, group: 'Me' },
+    { to: '/attendance', label: 'Attendance', icon: 'clock' as const, show: true, group: 'Me' },
+    { to: '/leave', label: 'Time off', icon: 'calendar' as const, show: true, group: 'Me' },
+    { to: '/requests', label: 'Requests', icon: 'inbox' as const, show: true, badge: waiting.data?.total, group: 'Me' },
+    { to: '/expenses', label: 'Expenses', icon: 'card' as const, show: true, group: 'Me' },
+    { to: '/payroll', label: 'Payroll', icon: 'wallet' as const, show: true, group: 'Me' },
+    { to: '/performance', label: 'Performance', icon: 'star' as const, show: true, badge: perf.data?.total, group: 'Me' },
+    { to: '/profile', label: 'My profile', icon: 'user' as const, show: true, group: 'Me' },
+    { to: '/employees', label: isHR(user.role) ? 'People' : 'My team', icon: 'users' as const, show: canView(user.role), group: 'People' },
+    { to: '/recruitment', label: 'Hiring', icon: 'users' as const, show: canView(user.role), group: 'People' },
+    { to: '/assets', label: 'Assets', icon: 'list' as const, show: isHR(user.role), group: 'Company' },
+    { to: '/settings', label: 'Settings', icon: 'settings' as const, show: isHR(user.role), group: 'Company' },
   ];
 
   return (
     <AppShell
       label="Main"
       brand={<Brand />}
-      links={links.filter((l) => l.show).map((l) => ({ to: l.to, label: l.label, icon: l.icon, end: l.to === '/', badge: l.badge }))}
+      links={links.filter((l) => l.show).map((l) => ({ to: l.to, label: l.label, icon: l.icon, end: l.to === '/', badge: l.badge, group: l.group }))}
+      bell={{ to: '/notifications', count: unread.data?.unread }}
       account={{
         email: user.email,
         role: user.role === 'HR' ? 'HR' : user.role.toLowerCase(),

@@ -306,7 +306,7 @@ export function Employees() {
   return (
     <>
       <div className="row between">
-        <h1>{hr ? 'Employees' : 'My team'}</h1>
+        <h1>{hr ? 'People' : 'My team'}</h1>
         {hr && (
           <button
             className="btn primary"

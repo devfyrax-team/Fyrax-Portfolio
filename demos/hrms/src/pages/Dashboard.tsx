@@ -3,7 +3,8 @@ import { api, ApiError } from '../api';
 import { useAuth } from '../auth';
 import { AttendanceRecord, Summary, SummaryStats } from '../components/AttendanceBits';
 import { Badge, Empty, ErrorText, Loading, dateNow, monthNow, time, useAction, day } from '../components/ui';
-import { Icon } from '../components/Icon';
+import { Link } from 'react-router-dom';
+import { Icon, IconName } from '../components/Icon';
 import { MyOnboardingSteps } from '../components/Onboarding';
 
 interface Balance {
@@ -14,6 +15,13 @@ interface Balance {
   pending: string;
   leaveType: { name: string };
 }
+
+const quickActions: { to: string; label: string; icon: IconName }[] = [
+  { to: '/leave', label: 'Take time off', icon: 'calendar' },
+  { to: '/expenses', label: 'Claim an expense', icon: 'card' },
+  { to: '/payroll', label: 'See my payslip', icon: 'wallet' },
+  { to: '/profile', label: 'Update my details', icon: 'user' },
+];
 
 const noProfile = (e: unknown) => e instanceof ApiError && e.status === 409;
 
@@ -66,7 +74,7 @@ export function Dashboard() {
           <div>
             <h2>Today {today && <Badge value={today.status} />}</h2>
             <div className="clock">
-              {today?.checkOut ? 'Done for the day' : today ? 'Checked in' : 'Not checked in'}
+              {today?.checkOut ? 'All done for today' : today ? "You're checked in" : 'Ready to start your day?'}
             </div>
             <div className="punches">
               <div className="punch"><span>Check in</span><b>{time(today?.checkIn)}</b></div>
@@ -86,6 +94,15 @@ export function Dashboard() {
       )}
 
       {att.isLoading && <Loading />}
+
+      <nav className="quick-grid" aria-label="Quick actions">
+        {quickActions.map((a) => (
+          <Link key={a.to} to={a.to} className="quick">
+            <span className="chip"><Icon name={a.icon} size={18} /></span>
+            {a.label}
+          </Link>
+        ))}
+      </nav>
 
       {att.data && (
         <div className="card">

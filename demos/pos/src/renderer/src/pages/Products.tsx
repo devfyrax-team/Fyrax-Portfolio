@@ -20,7 +20,11 @@ export default function Products() {
   const [del, setDel] = useState<Product | null>(null)
   const [io, setIo] = useState<{ msg?: string; result?: ImportResult; error?: string } | null>(null)
   const [menu, setMenu] = useState(false)
+  const [view, setView] = useState<'all' | 'low' | 'out'>('all')
 
+  const status = (p: Product) => (p.stock <= 0 ? 'out' : p.stock <= p.reorder_level ? 'low' : 'ok')
+  const countOf = (k: 'all' | 'low' | 'out') => rows.filter((p) => k === 'all' || status(p) === k).length
+  const shown = rows.filter((p) => view === 'all' || status(p) === view)
   const imageOf = useProductImages(rows)
   const load = () => window.api.searchProducts(q).then(setRows)
   useEffect(() => {
@@ -47,7 +51,7 @@ export default function Products() {
       <div className="page-head">
         <div>
           <h1 className="page-title">Products</h1>
-          <div className="page-sub">{rows.length} {rows.length === 1 ? 'product' : 'products'}</div>
+          <div className="page-sub">{rows.length} {rows.length === 1 ? 'product' : 'products'} · {countOf('low')} running low · {countOf('out')} out of stock</div>
         </div>
         <div className="form-actions" style={{ flex: 1, justifyContent: 'flex-end' }}>
           <div className="searchbox">
@@ -80,6 +84,13 @@ export default function Products() {
       </div>
 
       <div className="page-body">
+        <div className="filters" role="group" aria-label="Show">
+          {([['all', 'All'], ['low', 'Low stock'], ['out', 'Out of stock']] as const).map(([k, label]) => (
+            <button key={k} className={view === k ? 'fchip on' : 'fchip'} aria-pressed={view === k} onClick={() => setView(k)}>
+              {label} ({countOf(k)})
+            </button>
+          ))}
+        </div>
         <div className="card table-card">
           <div className="table-scroll">
             <table className="tbl">
@@ -87,7 +98,7 @@ export default function Products() {
                 <tr><th aria-label="Picture"></th><th>SKU</th><th>Name</th><th>Category</th><th>Unit</th><th className="r">Cost</th><th className="r">Price</th><th className="r">Stock</th><th className="r">Actions</th></tr>
               </thead>
               <tbody>
-                {rows.map((p) => (
+                {shown.map((p) => (
                   <tr key={p.id}>
                     <td className="thumb-cell"><ProductThumb small src={imageOf(p.id)} name={p.name} /></td>
                     <td className="muted">{p.sku}</td>
@@ -97,7 +108,7 @@ export default function Products() {
                     <td className="r">{lkr(p.cost)}</td>
                     <td className="r">{lkr(p.price)}</td>
                     <td className="r">
-                      {p.stock <= p.reorder_level ? <span className="pill warn">{qtyFmt(p.stock)} low</span> : qtyFmt(p.stock)}
+                      {status(p) === 'out' ? <span className="pill bad">Out of stock</span> : status(p) === 'low' ? <span className="pill warn">Low · {qtyFmt(p.stock)}</span> : <span className="pill ok">{qtyFmt(p.stock)} {p.unit}</span>}
                     </td>
                     <td className="r">
                       <div className="actions">
@@ -108,8 +119,8 @@ export default function Products() {
                     </td>
                   </tr>
                 ))}
-                {!rows.length && (
-                  <tr><td colSpan={9}><div className="empty"><b>No products found</b><span>Add your first product or change the search.</span></div></td></tr>
+                {!shown.length && (
+                  <tr><td colSpan={9}><div className="empty"><b>No products found</b><span>Try another name or SKU, or choose All.</span></div></td></tr>
                 )}
               </tbody>
             </table>
