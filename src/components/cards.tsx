@@ -70,10 +70,31 @@ const coverPlacement = [
 export function ProjectCover({
   index,
   className = "",
+  image,
 }: {
   index: number;
   className?: string;
+  image?: string;
 }) {
+  if (image) {
+    return (
+      <div
+        aria-hidden
+        className={`relative overflow-hidden bg-gradient-to-br from-surface-2 via-surface to-ink ${className}`}
+      >
+        <Image
+          src={image}
+          alt=""
+          fill
+          sizes="(min-width: 1024px) 60vw, 100vw"
+          className="object-cover object-left-top transition-transform duration-700 ease-snap group-hover:scale-[1.03]"
+        />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_80%_at_70%_100%,var(--color-brand-tint),transparent_70%)] opacity-60" />
+        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-surface to-transparent" />
+      </div>
+    );
+  }
+
   return (
     <div
       aria-hidden
@@ -110,6 +131,7 @@ export function ProjectCard({
       >
         <ProjectCover
           index={index}
+          image={project.image}
           className={large ? "min-h-64 flex-1" : "aspect-[16/9]"}
         />
         <div className="p-7 sm:p-9">
