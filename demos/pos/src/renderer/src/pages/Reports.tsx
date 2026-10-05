@@ -3,6 +3,11 @@ import type { Product } from '../types'
 import { lkr, qtyFmt } from '../util'
 import { IconCoins, IconPercent, IconReceipt, IconTrend } from '../icons'
 
+const dayStr = (back: number) => {
+  const d = new Date()
+  d.setDate(d.getDate() - back)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
 const today = () => {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -39,19 +44,26 @@ export default function Reports() {
       <div className="page-head">
         <div>
           <h1 className="page-title">Reports</h1>
-          <div className="page-sub">Daily sales summary (revenue is after refunds)</div>
+          <div className="page-sub">How the shop did on {date === today() ? 'today' : date}. Money in is after refunds.</div>
         </div>
+        <div className="form-actions">
+        {[['Today', 0], ['Yesterday', 1]].map(([label, back]) => (
+          <button key={label} className={date === dayStr(back as number) ? 'fchip on' : 'fchip'} onClick={() => setDate(dayStr(back as number))}>
+            {label}
+          </button>
+        ))}
         <label className="form-actions">
-          <span className="label">Date</span>
+          <span className="label">Or pick a date</span>
           <input className="date-input" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </label>
+        </div>
       </div>
 
       <div className="page-body">
         <div className="stats">
-          <div className="card stat"><div className="stat-top"><span className="stat-ico"><IconCoins /></span>Revenue</div><b>{lkr(r.revenue)}</b></div>
-          <div className="card stat"><div className="stat-top"><span className="stat-ico"><IconTrend /></span>Gross profit</div><b>{lkr(r.profit)}</b></div>
-          <div className="card stat"><div className="stat-top"><span className="stat-ico"><IconReceipt /></span>Bills</div><b>{r.bills}</b></div>
+          <div className="card stat"><div className="stat-top"><span className="stat-ico"><IconCoins /></span>Money in</div><b>{lkr(r.revenue)}</b></div>
+          <div className="card stat"><div className="stat-top"><span className="stat-ico"><IconTrend /></span>Profit (before expenses)</div><b>{lkr(r.profit)}</b></div>
+          <div className="card stat"><div className="stat-top"><span className="stat-ico"><IconReceipt /></span>Bills made</div><b>{r.bills}</b></div>
           <div className="card stat"><div className="stat-top"><span className="stat-ico"><IconPercent /></span>VAT collected</div><b>{lkr(r.tax)}</b></div>
           <div className="card stat"><div className="stat-top"><span className="stat-ico"><IconReceipt /></span>Refunds{r.refundCount ? ` (${r.refundCount})` : ''}</div><b>{lkr(r.refunds)}</b></div>
         </div>
@@ -71,7 +83,7 @@ export default function Reports() {
           </div>
 
           <div className="stack">
-            <Table title="Low stock" empty={!low.length && 'Everything is above its reorder level.'}>
+            <Table title="Running low: reorder soon" empty={!low.length && 'Nothing is running low.'}>
               {low.map((p) => (
                 <tr key={p.id}><td className="name">{p.name}</td><td className="r"><span className="pill warn">{qtyFmt(p.stock)} {p.unit}</span></td></tr>
               ))}

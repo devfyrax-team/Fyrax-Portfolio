@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Product, Sale, Settings } from '../types'
 import { lkr, qtyFmt, receiptHtml } from '../util'
-import { IconBolt, IconPlusSquare, IconPrinter, IconSearch, IconX } from '../icons'
-import { ProductThumb, useProductImages } from '../ProductImage'
+import { IconPrinter, IconSearch, IconX } from '../icons'
 
 interface CartLine {
   product: Product
@@ -13,7 +12,15 @@ interface CartLine {
 const METHODS = ['cash', 'card']
 
 const catOf = (p: Product) => p.category?.trim() || 'Uncategorised'
-const tint = (s: string) => 't' + ([...s].reduce((a, c) => a + c.charCodeAt(0), 0) % 6)
+
+/** Quick "customer gives" amounts: exact, then rounded up to the next 500 / 1,000 / 5,000. */
+const cashOpts = (total: number) => {
+  const up = (step: number) => Math.ceil(total / step) * step
+  const seen = new Set<number>()
+  return [{ label: 'Exact', v: total }, ...[500, 1000, 5000].map((st) => ({ label: lkr(up(st)).replace(/\.00$/, ''), v: up(st) }))].filter(
+    (o) => o.v > 0 && !seen.has(o.v) && seen.add(o.v)
+  )
+}
 
 function Stepper({ value, onChange, step, label }: { value: number; onChange: (v: number) => void; step: number; label: string }) {
   return (
@@ -47,7 +54,6 @@ export default function Checkout({
 }) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Product[]>([])
-  const [pick, setPick] = useState<Record<number, number>>({})
   const [cart, setCart] = useState<CartLine[]>([])
   const [discount, setDiscount] = useState(0)
   const [method, setMethod] = useState('cash')
@@ -55,7 +61,6 @@ export default function Checkout({
   const [done, setDone] = useState<{ sale: Sale; change: number } | null>(null)
   const [error, setError] = useState('')
   const searchRef = useRef<HTMLInputElement>(null)
-  const imageOf = useProductImages(results)
 
   useEffect(() => {
     window.api.searchProducts(query).then(setResults)
@@ -74,12 +79,17 @@ export default function Checkout({
   const total = inclusive ? net : net + tax
   const paid = tendered === '' ? total : parseFloat(tendered) || 0
   const change = Math.max(0, paid - total)
+  const short = method !== 'credit' && paid < total
 
   const counts = new Map<string, number>()
   for (const p of results) counts.set(catOf(p), (counts.get(catOf(p)) ?? 0) + 1)
   const cats = [...counts.keys()].sort((a, b) => a.localeCompare(b))
   if (category !== 'All' && !counts.has(category)) cats.unshift(category)
   const shown = category === 'All' ? results : results.filter((p) => catOf(p) === category)
+
+  const stockText = (p: Product) =>
+    p.stock <= 0 ? 'Out of stock' : p.stock <= p.reorder_level ? `Only ${qtyFmt(p.stock)} left` : `${qtyFmt(p.stock)} in stock`
+  const inCart = (p: Product) => cart.find((l) => l.product.id === p.id)?.qty ?? 0
 
   const add = (p: Product, qty = 1) => {
     if (qty <= 0) return
@@ -121,28 +131,26 @@ export default function Checkout({
     setDiscount(0)
     setTendered('')
     setQuery('')
-    setPick({})
     if (settings.auto_print !== '0') window.api.printReceipt(receiptHtml(sale, settings, change))
   }
 
   if (done)
     return (
       <div className="card done">
-        <span className="pill ok">Paid</span>
+        <span className="done-tick" aria-hidden="true">✓</span>
         <h2>Sale complete</h2>
-        <p className="muted">Bill {done.sale.receipt_no}</p>
+        <p className="muted">
+          Bill {done.sale.receipt_no}
+          {settings.auto_print !== '0' ? ' · Receipt is printing' : ''}
+        </p>
         <p className="big">{lkr(done.sale.total)}</p>
-        {done.change > 0 && (
-          <p>
-            Change: <b>{lkr(done.change)}</b>
-          </p>
-        )}
+        {done.change > 0 && <p className="change-ok">Give change {lkr(done.change)}</p>}
         <div className="done-actions">
-          <button className="btn outline" onClick={() => window.api.printReceipt(receiptHtml(done.sale, settings, done.change))}>
-            <IconPrinter /> Reprint receipt
-          </button>
-          <button className="btn primary" autoFocus onClick={() => setDone(null)}>
+          <button className="btn primary lg" autoFocus onClick={() => setDone(null)}>
             Start new sale
+          </button>
+          <button className="btn outline lg" onClick={() => window.api.printReceipt(receiptHtml(done.sale, settings, done.change))}>
+            <IconPrinter /> Reprint receipt
           </button>
         </div>
       </div>
@@ -151,69 +159,47 @@ export default function Checkout({
   return (
     <div className="checkout">
       <section className="checkout-main">
-        <div className="page-head">
-          <h1 className="page-title">Checkout</h1>
-          <div className="searchbox">
+        <div className="sell-top">
+          <div className="searchbox big">
             <IconSearch />
             <input
               ref={searchRef}
               aria-label="Search products"
-              placeholder="Scan barcode or search name / SKU"
+              placeholder="Scan a barcode or type a product name"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && onSearchEnter()}
             />
           </div>
-        </div>
-
-        <div className="tabs" role="tablist" style={{ padding: '0 32px', marginTop: 12 }}>
-          {['All', ...cats].map((c) => (
-            <button key={c} role="tab" aria-selected={c === category} className={c === category ? 'tab active' : 'tab'} onClick={() => onCategory(c)}>
-              {c}
-              <span className="badge-count">{c === 'All' ? results.length : counts.get(c) ?? 0}</span>
-            </button>
-          ))}
+          <div className="cat-chips" role="group" aria-label="Categories">
+            {['All', ...cats].map((c) => (
+              <button key={c} className={c === category ? 'fchip on' : 'fchip'} aria-pressed={c === category} onClick={() => onCategory(c)}>
+                {c}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="menu-grid">
           {shown.map((p) => {
-            const step = p.allow_fraction ? 0.5 : 1
-            const q = pick[p.id] ?? 1
+            const n = inCart(p)
             const low = p.stock <= p.reorder_level
             return (
-              <article key={p.id} className="card product">
-                <div className="product-top">
-                  <ProductThumb src={imageOf(p.id)} tint={tint(catOf(p))} name={p.name} />
-                  <div style={{ minWidth: 0 }}>
-                    <div className="product-name">{p.name}</div>
-                    <div className={low ? 'product-meta low' : 'product-meta'}>
-                      {qtyFmt(p.stock)} {p.unit} available{low ? ' · low' : ''}
-                    </div>
-                    <div className="product-price">
-                      {lkr(p.price)} <small>/ {p.unit}</small>
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <div className="label" style={{ marginBottom: 8 }}>Quantity</div>
-                  <Stepper label={`quantity of ${p.name}`} step={step} value={q} onChange={(v) => setPick((m) => ({ ...m, [p.id]: v }))} />
-                </div>
-                <button
-                  className="btn primary"
-                  onClick={() => {
-                    add(p, q)
-                    setPick((m) => ({ ...m, [p.id]: 1 }))
-                  }}
-                >
-                  Add to bill <IconPlusSquare />
-                </button>
-              </article>
+              <button key={p.id} className="prod" onClick={() => add(p)} aria-label={`Add ${p.name} to bill`}>
+                <span className="prod-cat">{catOf(p)}</span>
+                <span className="prod-name">{p.name}</span>
+                <span className="prod-price">
+                  {lkr(p.price)} <small>/ {p.unit}</small>
+                </span>
+                <span className={p.stock <= 0 ? 'prod-stock out' : low ? 'prod-stock low' : 'prod-stock'}>{stockText(p)}</span>
+                {n > 0 && <span className="prod-badge">{qtyFmt(n)}</span>}
+              </button>
             )
           })}
           {!shown.length && (
             <div className="empty">
-              <b>No products match</b>
-              <span>Try a different name, SKU or barcode, or choose “All”.</span>
+              <b>No products match “{query}”</b>
+              <span>Check the spelling, or choose All.</span>
             </div>
           )}
         </div>
@@ -222,25 +208,25 @@ export default function Checkout({
       <aside className="checkout-side" aria-label="Current bill">
         <div className="bill-head">
           <h2>Current bill</h2>
-          <span className="pill info">
-            {cart.length} {cart.length === 1 ? 'item' : 'items'}
-          </span>
+          {!!cart.length && (
+            <button className="link-danger" onClick={() => setCart([])}>
+              Clear all
+            </button>
+          )}
         </div>
 
         <div className="bill-lines">
           {!cart.length && (
-            <div className="empty">
-              <b>The bill is empty</b>
-              <span>Scan a barcode or tap “Add to bill” on a product.</span>
+            <div className="empty-dash">
+              <b>No items yet</b>
+              Scan a barcode or tap a product to start the bill.
             </div>
           )}
           {cart.map((l, i) => (
-            <div key={l.product.id} className="card bill-line">
+            <div key={l.product.id} className="bill-line">
               <div className="bill-line-top">
                 <span className="bill-line-name">{l.product.name}</span>
-                <button className="icon-btn danger" aria-label={`Remove ${l.product.name}`} onClick={() => setCart((c) => c.filter((_, k) => k !== i))}>
-                  <IconX size="sm" />
-                </button>
+                <b className="bill-line-total">{lkr(l.qty * l.price)}</b>
               </div>
               <div className="bill-line-ctl">
                 <Stepper
@@ -249,76 +235,93 @@ export default function Checkout({
                   value={l.qty}
                   onChange={(q) => setCart((c) => c.map((x, k) => (k === i ? { ...x, qty: q } : x)))}
                 />
-                <span className="bill-line-total">{lkr(l.qty * l.price)}</span>
+                <label className="bill-price">
+                  Rs.
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    aria-label={`Unit price of ${l.product.name}`}
+                    value={l.price}
+                    onChange={(e) => {
+                      const p = parseFloat(e.target.value) || 0
+                      setCart((c) => c.map((x, k) => (k === i ? { ...x, price: p } : x)))
+                    }}
+                  />
+                  / {l.product.unit}
+                </label>
+                <button className="icon-btn danger" aria-label={`Remove ${l.product.name}`} onClick={() => setCart((c) => c.filter((_, k) => k !== i))}>
+                  <IconX size="sm" />
+                </button>
               </div>
-              <label className="bill-line-ctl price">
-                {l.product.unit} × Rs.
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  aria-label={`Unit price of ${l.product.name}`}
-                  value={l.price}
-                  onChange={(e) => {
-                    const p = parseFloat(e.target.value) || 0
-                    setCart((c) => c.map((x, k) => (k === i ? { ...x, price: p } : x)))
-                  }}
-                />
-              </label>
             </div>
           ))}
         </div>
 
         <div className="bill-foot">
-          <div className="trow">
-            <span className="muted">Subtotal</span>
+          <div className="trow small">
+            <span className="muted">
+              Subtotal ({cart.length} {cart.length === 1 ? 'item' : 'items'})
+            </span>
             <span>{lkr(subtotal)}</span>
           </div>
-          <label className="trow">
-            <span className="muted">Discount</span>
+          <label className="trow small">
+            <span className="muted">Discount (Rs.)</span>
             <input type="number" min="0" placeholder="0.00" value={discount || ''} onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)} />
           </label>
           {rate > 0 && (
-            <div className="trow">
+            <div className="trow small">
               <span className="muted">
-                VAT {rate}%{inclusive ? ' (incl.)' : ''}
+                VAT {rate}%{inclusive ? ' (included)' : ''}
               </span>
               <span>{lkr(tax)}</span>
             </div>
           )}
           <div className="trow grand">
-            <span>Total</span>
+            <span>Total to pay</span>
             <span>{lkr(total)}</span>
           </div>
 
-          <div className="chips" role="radiogroup" aria-label="Payment method">
+          <div className="pay-methods" role="radiogroup" aria-label="Payment method">
             {METHODS.map((m) => (
-              <button key={m} role="radio" aria-checked={m === method} className={m === method ? 'chip active' : 'chip'} onClick={() => setMethod(m)}>
-                {m}
+              <button key={m} role="radio" aria-checked={m === method} className={m === method ? 'pay on' : 'pay'} onClick={() => setMethod(m)}>
+                {m === 'cash' ? 'Cash' : 'Card'}
               </button>
             ))}
           </div>
-          {method !== 'credit' && (
+          {method === 'cash' && (
             <>
-              <label className="trow">
-                <span className="muted">Amount paid</span>
-                <input type="number" min="0" placeholder={total.toFixed(2)} value={tendered} onChange={(e) => setTendered(e.target.value)} />
-              </label>
-              <div className="trow">
-                <span className="muted">Change</span>
-                <b>{lkr(change)}</b>
+              <div className="label">Customer gives</div>
+              <div className="quick-cash">
+                {cashOpts(total).map((o) => (
+                  <button key={o.label} className={tendered === String(o.v) ? 'qc on' : 'qc'} onClick={() => setTendered(o.v === total ? '' : String(o.v))}>
+                    {o.label}
+                  </button>
+                ))}
+                <input
+                  className="qc-input"
+                  type="number"
+                  min="0"
+                  aria-label="Other amount paid"
+                  placeholder="Other amount"
+                  value={cashOpts(total).some((o) => String(o.v) === tendered) ? '' : tendered}
+                  onChange={(e) => setTendered(e.target.value)}
+                />
+              </div>
+              <div className={short ? 'change-box short' : 'change-box'}>
+                <span>{short ? 'Still to collect' : 'Change to give'}</span>
+                <b>{short ? lkr(total - paid) : lkr(change)}</b>
               </div>
             </>
           )}
-          {error && <p className="err">{error}</p>}
-          <button className="btn primary lg wide" disabled={!cart.length} onClick={complete}>
-            Complete sale <IconBolt />
-          </button>
-          {!!cart.length && (
-            <button className="btn ghost wide" onClick={() => setCart([])}>
-              Clear bill
-            </button>
+          {error && (
+            <p className="err" role="alert">
+              {error}
+            </p>
           )}
+          <button className="btn primary xl wide" disabled={!cart.length || (method === 'cash' && short)} onClick={complete}>
+            {cart.length ? `Complete sale · ${lkr(total)}` : 'Add items to start'}
+          </button>
         </div>
       </aside>
     </div>

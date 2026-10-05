@@ -26,7 +26,7 @@ export default function Purchasing() {
       <div className="page-head">
         <div>
           <h1 className="page-title">Purchasing</h1>
-          <div className="page-sub">Stock received from suppliers{owed > 0 && <> · you owe <b>{lkr(owed)}</b></>}</div>
+          <div className="page-sub">Record deliveries and what you owe suppliers{owed > 0 && <> · you owe <b>{lkr(owed)}</b></>}</div>
         </div>
         <div className="form-actions">
           <button className="btn outline" onClick={() => setEditSup({ name: '', phone: '', address: '', notes: '' })}><IconPlus /> Add supplier</button>
@@ -37,7 +37,7 @@ export default function Purchasing() {
       <div className="tabs" role="tablist" style={{ padding: '0 32px', marginTop: 12 }}>
         {(['Receipts', 'Suppliers'] as const).map((t) => (
           <button key={t} role="tab" aria-selected={t === tab} className={t === tab ? 'tab active' : 'tab'} onClick={() => setTab(t)}>
-            {t}<span className="badge-count">{t === 'Receipts' ? purchases.length : suppliers.length}</span>
+            {t === 'Receipts' ? 'Deliveries' : t}<span className="badge-count">{t === 'Receipts' ? purchases.length : suppliers.length}</span>
           </button>
         ))}
       </div>
@@ -57,10 +57,10 @@ export default function Purchasing() {
                     <td className="r">{p.lines}</td>
                     <td className="r">{lkr(p.total)}</td>
                     <td className="r">{p.total - p.paid > 0.004 ? <span className="pill warn">{lkr(p.total - p.paid)}</span> : <span className="pill ok">Paid</span>}</td>
-                    <td className="r"><button className="btn sm outline" onClick={async () => setDetail(await window.api.getPurchase(p.id))}>View</button></td>
+                    <td className="r"><button className="btn sm outline" onClick={async () => setDetail(await window.api.getPurchase(p.id))}>View delivery</button></td>
                   </tr>
                 ))}
-                {!purchases.length && <tr><td colSpan={8}><div className="empty"><b>No stock received yet</b><span>Use “Receive stock” when a delivery arrives. It adds to stock and updates costs.</span></div></td></tr>}
+                {!purchases.length && <tr><td colSpan={8}><div className="empty"><b>No deliveries yet</b><span>When stock arrives, tap “Receive stock”. It adds the items to your stock and updates costs.</span></div></td></tr>}
               </tbody>
             </table>
           </div></div>

@@ -1,9 +1,10 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { Fragment, ReactNode, useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { Icon, IconName } from './Icon';
 import { useTheme } from './theme';
 
-export interface ShellLink { to: string; label: string; icon: IconName; end?: boolean; badge?: number }
+export interface ShellLink { to: string; label: string; icon: IconName; end?: boolean; badge?: number; group?: string }
+export interface ShellBell { to: string; count?: number }
 export interface ShellAccount { email: string; role: string; accountTo?: string; onSignOut: () => void }
 
 const initials = (email: string) => {
@@ -27,7 +28,7 @@ export function Brand({ sub }: { sub?: string }) {
  * Page pattern: app chrome. A dark sidebar on medium/wide screens; on narrow screens the same
  * destinations sit behind a menu button, so the sidebar rail never eats the page.
  */
-export function AppShell({ label, brand, links, account }: { label: string; brand: ReactNode; links: ShellLink[]; account: ShellAccount }) {
+export function AppShell({ label, brand, links, account, bell }: { label: string; brand: ReactNode; links: ShellLink[]; account: ShellAccount; bell?: ShellBell }) {
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
   const { theme, toggle } = useTheme();
@@ -49,13 +50,15 @@ export function AppShell({ label, brand, links, account }: { label: string; bran
       </header>
       <nav id="main-nav" className={open ? 'sidebar open' : 'sidebar'} aria-label={label}>
         <div className="brand brand-side">{brand}</div>
-        <div className="nav-section">Menu</div>
-        {links.map((l) => (
-          <NavLink key={l.to} to={l.to} end={l.end} className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
-            <Icon name={l.icon} />
-            <span className="label">{l.label}</span>
-            {!!l.badge && <span className="nav-badge" aria-label={`${l.badge} waiting`}>{l.badge}</span>}
-          </NavLink>
+        {links.map((l, i) => (
+          <Fragment key={l.to}>
+            {(i === 0 || (l.group ?? 'Menu') !== (links[i - 1].group ?? 'Menu')) && <div className="nav-section">{l.group ?? 'Menu'}</div>}
+            <NavLink to={l.to} end={l.end} className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
+              <Icon name={l.icon} />
+              <span className="label">{l.label}</span>
+              {!!l.badge && <span className="nav-badge" aria-label={`${l.badge} waiting`}>{l.badge}</span>}
+            </NavLink>
+          </Fragment>
         ))}
         <div className="sidebar-foot">
           <div className="user-card">
@@ -81,6 +84,14 @@ export function AppShell({ label, brand, links, account }: { label: string; bran
         </div>
       </nav>
       <main className="content">
+        {bell && (
+          <div className="page-top">
+            <Link to={bell.to} className="btn bell" aria-label={bell.count ? `Notifications, ${bell.count} unread` : 'Notifications'} title="Notifications">
+              <Icon name="bell" size={18} />
+              {!!bell.count && <span className="bell-dot" aria-hidden="true">{bell.count > 99 ? '99+' : bell.count}</span>}
+            </Link>
+          </div>
+        )}
         <div className="page"><Outlet /></div>
       </main>
     </div>

@@ -86,7 +86,7 @@ const more: [string, string, string, string, string, number, number, number, num
   ['PAINT-R4', '1000014', 'Emulsion Paint Cream 4L', 'Paint', 'pcs', 0, 6600, 7600, 5, 16],
   ['BRUSH-3', '1000015', 'Paint Brush 3"', 'Paint', 'pcs', 0, 240, 360, 10, 40],
   ['SAND-80', '1000016', 'Sandpaper 80 grit', 'Paint', 'pcs', 0, 40, 65, 30, 100],
-  ['SCRD-SET', '1000017', 'Screwdriver Set (6 pc)', 'Tools', 'pcs', 0, 1150, 1650, 5, 14],
+  ['SCRD-SET', '1000017', 'Screwdriver Set (6 pc)', 'Tools', 'pcs', 0, 1150, 1650, 5, 40],
   ['TAPE-5', '1000018', 'Measuring Tape 5m', 'Tools', 'pcs', 0, 420, 620, 8, 22],
   ['DRILL-6', '1000019', 'Masonry Drill Bit 6mm', 'Tools', 'pcs', 0, 190, 290, 10, 30],
   ['CEM-50', '1000020', 'Cement 50kg bag', 'Building', 'pcs', 0, 2150, 2380, 20, 60],

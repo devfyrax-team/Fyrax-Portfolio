@@ -81,7 +81,17 @@ export const Badge = ({ value }: { value: string }) => (
 );
 
 export const Empty = ({ children }: { children: ReactNode }) => <p className="empty">{children}</p>;
-export const Loading = () => <p className="muted" role="status">Loading…</p>;
+/** A thin progress bar over shimmering placeholder rows; the words stay for screen readers. */
+export const Loading = () => (
+  <div className="loading" role="status" aria-live="polite">
+    <span className="sr-only">Loading…</span>
+    <div className="bar" aria-hidden="true"><i /></div>
+    <div className="sk" style={{ height: 22, width: '40%' }} aria-hidden="true" />
+    <div className="sk" style={{ height: 48 }} aria-hidden="true" />
+    <div className="sk" style={{ height: 48 }} aria-hidden="true" />
+    <div className="sk" style={{ height: 48, width: '70%' }} aria-hidden="true" />
+  </div>
+);
 
 export const money = (n: number | string) =>
   Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });

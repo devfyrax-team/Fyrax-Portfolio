@@ -17,7 +17,7 @@ function PinPad({ value, onChange, onEnter, disabled }: { value: string; onChang
         ))}
         <button type="button" className="key sec" disabled={disabled} onClick={() => onChange(value.slice(0, -1))} aria-label="Delete last digit">⌫</button>
         <button type="button" className="key" disabled={disabled} onClick={() => press('0')}>0</button>
-        <button type="button" className="key go" disabled={disabled || value.length < 4} onClick={onEnter}>Go</button>
+        <button type="button" className="key go" disabled={disabled || value.length < 4} onClick={onEnter}>Sign in</button>
       </div>
     </div>
   )
@@ -70,22 +70,24 @@ function SignIn({ users, onDone }: { users: User[]; onDone: () => void }) {
 
   return (
     <>
-      <h1>Sign in</h1>
-      <p className="muted">{userId == null ? 'Who is working?' : 'Enter your PIN'}</p>
-      <div className="chips center" role="radiogroup" aria-label="Staff member">
+      <h1>Who is selling?</h1>
+      <p className="muted">{userId == null ? 'Tap your name to start' : 'Enter your PIN, 4 to 6 digits'}</p>
+      <div className="who-list" role="radiogroup" aria-label="Staff member">
         {users.map((u) => (
           <button
             key={u.id}
             role="radio"
             aria-checked={u.id === userId}
-            className={u.id === userId ? 'chip active' : 'chip'}
+            className={u.id === userId ? 'who on' : 'who'}
             onClick={() => {
               setUserId(u.id)
               setPin('')
               setError('')
             }}
           >
-            {u.name}
+            <span className="avatar lg">{u.name.trim().charAt(0).toUpperCase()}</span>
+            <b>{u.name}</b>
+            <small>{u.role}</small>
           </button>
         ))}
       </div>

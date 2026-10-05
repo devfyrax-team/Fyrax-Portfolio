@@ -11,6 +11,7 @@ export default function SettingsPage({ settings, onSaved, meId, lic, onLicense }
   const [theme, setTheme] = useState<Theme>(getTheme())
   const [printers, setPrinters] = useState<{ name: string; label: string }[]>([])
   const [testMsg, setTestMsg] = useState('')
+  const [sec, setSec] = useState<'Shop' | 'Printing' | 'Staff' | 'Backup' | 'Licence' | 'Appearance'>('Shop')
   useEffect(() => setS(settings), [settings])
   useEffect(() => onThemeChange(setTheme), [])
   useEffect(() => {
@@ -32,11 +33,19 @@ export default function SettingsPage({ settings, onSaved, meId, lic, onLicense }
       <div className="page-head">
         <div>
           <h1 className="page-title">Settings</h1>
-          <div className="page-sub">Shop details, printing, staff and backups</div>
+          <div className="page-sub">Pick a section on the left</div>
         </div>
       </div>
-      <div className="page-body narrow">
-        <div className="card card-pad">
+      <div className="page-body settings">
+        <nav className="set-nav" aria-label="Settings sections">
+          {(['Shop', 'Printing', 'Staff', 'Backup', 'Licence', 'Appearance'] as const).map((t) => (
+            <button key={t} className={t === sec ? 'set-item on' : 'set-item'} aria-current={t === sec ? 'page' : undefined} onClick={() => setSec(t)}>
+              {t === 'Shop' ? 'Shop details' : t === 'Printing' ? 'Receipt printer' : t === 'Backup' ? 'Backup & restore' : t}
+            </button>
+          ))}
+        </nav>
+        <div className="set-body">
+        {sec === 'Appearance' && <div className="card card-pad">
           <h3 className="card-title">Appearance</h3>
           <label className="field">Theme
             <select value={theme} onChange={(e) => applyTheme(e.target.value as Theme)}>
@@ -45,9 +54,9 @@ export default function SettingsPage({ settings, onSaved, meId, lic, onLicense }
               <option value="dark">Dark</option>
             </select>
           </label>
-        </div>
+        </div>}
 
-        <div className="card card-pad">
+        {sec === 'Shop' && <div className="card card-pad">
           <h3 className="card-title">Shop details</h3>
           <div className="form">
             <label className="field full">Shop name<input value={s.shop_name ?? ''} onChange={(e) => set('shop_name', e.target.value)} /></label>
@@ -62,9 +71,9 @@ export default function SettingsPage({ settings, onSaved, meId, lic, onLicense }
             </label>
             <label className="field full">Receipt footer<input value={s.receipt_footer ?? ''} onChange={(e) => set('receipt_footer', e.target.value)} /></label>
           </div>
-        </div>
+        </div>}
 
-        <div className="card card-pad">
+        {sec === 'Printing' && <div className="card card-pad">
           <h3 className="card-title">Receipt printer</h3>
           <div className="form">
             <label className="field full">Printer
@@ -100,14 +109,14 @@ export default function SettingsPage({ settings, onSaved, meId, lic, onLicense }
           <p className="muted" style={{ marginTop: 12, fontSize: 13 }}>
             To open a cash drawer connected to the printer, turn on “open drawer” in the printer’s Windows driver settings.
           </p>
-        </div>
+        </div>}
 
-        <div className="form-actions">
-          <button className="btn primary" onClick={save}>Save settings</button>
-          {saved && <span className="ok-text" role="status">Settings saved</span>}
-        </div>
+        {(sec === 'Shop' || sec === 'Printing') && <div className="form-actions">
+          <button className="btn primary" onClick={save}>Save changes</button>
+          {saved && <span className="ok-text" role="status">Saved</span>}
+        </div>}
 
-        <div className="card card-pad">
+        {sec === 'Licence' && <div className="card card-pad">
           <h3 className="card-title">Licence</h3>
           {lic.state === 'licensed' ? (
             <>
@@ -120,10 +129,11 @@ export default function SettingsPage({ settings, onSaved, meId, lic, onLicense }
           ) : (
             <LicensePanel lic={lic} onDone={onLicense} />
           )}
-        </div>
+        </div>}
 
-        <Staff meId={meId} />
-        <Backup />
+        {sec === 'Staff' && <Staff meId={meId} />}
+        {sec === 'Backup' && <Backup />}
+        </div>
       </div>
     </div>
   )

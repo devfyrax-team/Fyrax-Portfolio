@@ -198,7 +198,7 @@ export function Leave() {
   const [tab, setTab] = useState<'mine' | 'approvals' | 'payouts'>('mine');
   return (
     <>
-      <h1>Leave</h1>
+      <h1>Time off</h1>
       {canView(user!.role) && (
         <Tabs tabs={[{ id: 'mine', label: 'My leave' }, { id: 'approvals', label: user!.role === 'MANAGER' ? 'Team requests' : 'All requests' }, ...(isHR(user!.role) ? [{ id: 'payouts' as const, label: 'Payouts' }] : [])]} value={tab} onChange={setTab} />
       )}
